@@ -29,10 +29,33 @@ Historical AIS data published as daily CSV archives at aisdata.ais.dk. Raw data 
 
 Raw CSV files, loaded by Python into PostgreSQL/PostGIS (raw schema), transformed by dbt (staging and marts), orchestrated and tested in CI, exposed through a dashboard.
 
+## Quick start
+
+Requirements: Docker Desktop and Git.
+
+```
+git clone https://github.com/romanyarosh21/baltic-vessel-traffic-pipeline.git
+cd baltic-vessel-traffic-pipeline
+copy .env.example .env
+```
+
+Open `.env` and set a password in `POSTGRES_PASSWORD`. Then start the database:
+
+```
+docker compose up -d
+```
+
+Check that the schemas were created:
+
+```
+docker compose exec db psql -U ais -d ais -c "\dn"
+```
+
+Expected schemas: `raw`, `staging`, `marts`.
 ## Status
 
 - [x] Repository structure
-- [ ] PostgreSQL/PostGIS in Docker Compose
+- [x] PostgreSQL/PostGIS in Docker Compose
 - [ ] Incremental, idempotent loader
 - [ ] dbt models and data-quality tests
 - [ ] Orchestration

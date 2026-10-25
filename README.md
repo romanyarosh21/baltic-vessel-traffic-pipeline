@@ -56,7 +56,9 @@ Expected schemas: `raw`, `staging`, `marts`.
 
 - [x] Repository structure
 - [x] PostgreSQL/PostGIS in Docker Compose
-- [ ] Incremental, idempotent loader
+- [x] Raw landing table (raw.ais_messages)
+- [x] Idempotent per-file loader
+- [ ] Incremental multi-day loading
 - [ ] dbt models and data-quality tests
 - [ ] Orchestration
 - [ ] CI

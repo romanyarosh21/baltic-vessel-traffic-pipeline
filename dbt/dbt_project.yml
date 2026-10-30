@@ -1,0 +1,19 @@
+name: baltic_ais
+version: "0.1.0"
+config-version: 2
+
+profile: baltic_ais
+
+model-paths: ["models"]
+macro-paths: ["macros"]
+test-paths: ["tests"]
+clean-targets: ["target", "dbt_packages"]
+
+models:
+  baltic_ais:
+    staging:
+      +materialized: view
+      +schema: staging
+    marts:
+      +materialized: table
+      +schema: marts

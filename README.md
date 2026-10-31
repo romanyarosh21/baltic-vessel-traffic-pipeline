@@ -123,7 +123,7 @@ dbt test --project-dir dbt --profiles-dir dbt
 - [x] Raw landing table (raw.ais_messages)
 - [x] Idempotent per-file loader
 - [ ] Incremental multi-day loading
-- [x] dbt models and data-quality tests
+- [x] dbt staging model and data-quality tests
 - [ ] dbt marts models
 - [ ] Orchestration
 - [ ] CI

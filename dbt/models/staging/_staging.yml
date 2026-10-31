@@ -1,0 +1,27 @@
+version: 2
+
+models:
+  - name: stg_ais_positions
+    description: >
+      Cleaned AIS position messages from vessels (Class A and Class B).
+      One row per (mmsi, message_ts). Non-vessel transmitters, invalid MMSI
+      and invalid coordinates are removed.
+    columns:
+      - name: mmsi
+        data_tests:
+          - not_null
+      - name: message_ts
+        data_tests:
+          - not_null
+      - name: latitude
+        data_tests:
+          - not_null
+      - name: longitude
+        data_tests:
+          - not_null
+      - name: vessel_class
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["Class A", "Class B"]

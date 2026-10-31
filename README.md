@@ -80,6 +80,42 @@ Get-Content sql\02_raw_ais.sql -Raw | docker compose exec -T db psql -U ais -d a
 - Data older than 24 months is available only for a limited time, so source files should be kept locally.
 - Class B transponders are often privately owned. Results are published as aggregates only, and no attempt is made to identify individuals.
 
+## Staging layer: cleaning rules
+
+`staging.stg_ais_positions` is built by dbt from `raw.ais_messages`. The rules below come from profiling the first loaded day (2026-10-21). The profiling queries are in `dbt/analyses/`.
+
+| Rule | Why | Effect on the 2026-10-21 file |
+|---|---|---|
+| Keep Class A and Class B only | Base stations, aids to navigation and rescue devices are not vessels | 1,285,448 of 16,515,558 raw rows dropped |
+| Drop MMSI that are not exactly 9 digits | Short numbers such as `3638` and `2190045` are not valid vessel identifiers | 68,494 rows |
+| Drop the AIS "no position" placeholder (latitude 91, longitude 0) | It marks a missing position, not a location | 31,496 rows |
+| Cast timestamps and numbers to proper types | `raw` keeps everything as text | invalid numbers become NULL, never an error |
+| Treat `Unknown` and `Undefined` as NULL | They mean "no data" | |
+| Deduplicate on (`mmsi`, `message_ts`) | The same message appears several times | about 5.4 million surplus rows |
+
+Counts for the middle rules were measured separately on the raw vessel rows, so they can overlap. Result: 9,750,908 rows from 2,380 Class A and 1,478 Class B distinct MMSI numbers.
+
+### Duplicates: a known trade-off
+
+Among vessel rows, 4,037,126 (`mmsi`, timestamp) pairs occur more than once, 5,436,017 surplus rows in total (about 36% of vessel rows). For 99.3% of these pairs (4,008,398) every copy has the same position, so keeping one row loses nothing. For the other 28,728 pairs (0.7%) the copies disagree on position. The model keeps one of them using a deterministic but arbitrary rule (lowest latitude, then longitude). This is a simplification, not a judgement about which position is correct. Timestamps have one-second resolution, so two genuine messages from one vessel within the same second would also collapse into one row. Why the conflicting copies exist has not been investigated yet.
+
+### Known gaps
+
+- AIS special codes in speed, course and heading (for example "not available" values) are not converted to NULL yet and need review.
+- Class B vessels are kept and marked in `vessel_class`. Published results use aggregates only.
+- Only one day has been profiled. The rules may need to change when more days are loaded.
+
+### Data-quality tests
+
+Eight dbt tests run on the staging model and all pass: `not_null` on `mmsi`, `message_ts`, `latitude`, `longitude` and `vessel_class`, `accepted_values` for `vessel_class`, uniqueness of (`mmsi`, `message_ts`), and a range and format check on coordinates and MMSI.
+
+To run dbt, first load the variables from `.env` into the PowerShell session, then run the model and the tests:
+
+```
+Get-Content .env | ForEach-Object { if ($_ -match '^\s*([^#=\s][^=]*)=(.*)$') { Set-Item -Path "env:$($Matches[1].Trim())" -Value $Matches[2].Trim() } }
+dbt run --project-dir dbt --profiles-dir dbt
+dbt test --project-dir dbt --profiles-dir dbt
+```
 ## Status
 
 - [x] Repository structure
@@ -87,7 +123,8 @@ Get-Content sql\02_raw_ais.sql -Raw | docker compose exec -T db psql -U ais -d a
 - [x] Raw landing table (raw.ais_messages)
 - [x] Idempotent per-file loader
 - [ ] Incremental multi-day loading
-- [ ] dbt models and data-quality tests
+- [x] dbt models and data-quality tests
+- [ ] dbt marts models
 - [ ] Orchestration
 - [ ] CI
 - [ ] Dashboard

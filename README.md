@@ -72,6 +72,24 @@ SQL scripts in `sql/` run automatically only when the database is created for th
 Get-Content sql\02_raw_ais.sql -Raw | docker compose exec -T db psql -U ais -d ais
 ```
 
+## Loading many days
+
+The loader also accepts a `.zip` archive (no need to unzip) or a folder with daily files:
+
+```
+python load\load_ais.py "C:\path\to\folder-with-daily-zips"
+```
+
+`raw.load_log` records every finished file, so a file that is already `complete` is skipped on the next run. Use `--force` to reload a file. A run with `--limit` is recorded as `partial`, and that file is loaded again next time. Each file is loaded in its own transaction together with its log entry.
+
+Apply `sql/03_load_log.sql` to an existing database the same way as other new scripts:
+
+```
+Get-Content sql\03_load_log.sql -Raw | docker compose exec -T db psql -U ais -d ais
+```
+
+First multi-day load: 7 days (2026-10-15 to 2026-10-21), about 117 million raw rows. For every file, `rows_loaded` in the log was compared with the row count in the table.
+
 ## Data notes and limitations
 
 - First load: one full day (2026-10-21) produced about 16.5 million raw messages from roughly 2,400 distinct Class A MMSI numbers.
@@ -122,8 +140,9 @@ dbt test --project-dir dbt --profiles-dir dbt
 - [x] PostgreSQL/PostGIS in Docker Compose
 - [x] Raw landing table (raw.ais_messages)
 - [x] Idempotent per-file loader
-- [ ] Incremental multi-day loading
+- [x] Multi-day loading with a load log (raw layer)
 - [x] dbt staging model and data-quality tests
+- [ ] Incremental staging model
 - [ ] dbt marts models
 - [ ] Orchestration
 - [ ] CI

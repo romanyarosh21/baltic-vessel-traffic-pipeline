@@ -123,6 +123,16 @@ Among vessel rows, 4,037,126 (`mmsi`, timestamp) pairs occur more than once, 5,4
 - Class B vessels are kept and marked in `vessel_class`. Published results use aggregates only.
 - Only one day has been profiled. The rules may need to change when more days are loaded.
 
+### Incremental runs
+
+`stg_ais_positions` is incremental by file. On every run dbt first asks `raw.load_log` which files are complete and either new or reloaded since they were last processed, and then processes only those files. The list is resolved before the main query so that PostgreSQL reads just those files instead of scanning the whole raw table.
+
+- The first run, or any change to the model's columns, needs `dbt run --full-refresh --select stg_ais_positions`.
+- Measured on the first eight days: the full rebuild of seven days (68.8 million rows) took about 15.6 minutes, and adding one new day took about 4.8 minutes.
+- Reloading a day with `--force` replaces that file's rows in staging on the next run, because its load time in the log becomes newer than the processed copy.
+- Do not run the loader and dbt at the same time.
+- The database container is started with `shm_size: 1gb`. The default 64 MB made large parallel queries fail with "could not resize shared memory segment".
+
 ### Data-quality tests
 
 Eight dbt tests run on the staging model and all pass: `not_null` on `mmsi`, `message_ts`, `latitude`, `longitude` and `vessel_class`, `accepted_values` for `vessel_class`, uniqueness of (`mmsi`, `message_ts`), and a range and format check on coordinates and MMSI.
@@ -142,7 +152,7 @@ dbt test --project-dir dbt --profiles-dir dbt
 - [x] Idempotent per-file loader
 - [x] Multi-day loading with a load log (raw layer)
 - [x] dbt staging model and data-quality tests
-- [ ] Incremental staging model
+- [x] Incremental staging model
 - [ ] dbt marts models
 - [ ] Orchestration
 - [ ] CI

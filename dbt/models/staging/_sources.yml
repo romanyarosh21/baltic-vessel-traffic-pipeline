@@ -5,3 +5,4 @@ sources:
     schema: raw
     tables:
       - name: ais_messages
+      - name: load_log

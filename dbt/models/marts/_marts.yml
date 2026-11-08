@@ -1,0 +1,32 @@
+version: 2
+
+models:
+  - name: dim_vessels
+    description: One row per MMSI with the latest known static data.
+    columns:
+      - name: mmsi
+        data_tests:
+          - unique
+          - not_null
+      - name: vessel_class
+        data_tests:
+          - not_null
+
+  - name: fct_vessels_daily
+    description: Distinct vessels and messages per day, vessel class and ship type.
+    columns:
+      - name: activity_date
+        data_tests:
+          - not_null
+      - name: vessel_class
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["Class A", "Class B"]
+      - name: ship_type
+        data_tests:
+          - not_null
+      - name: vessels
+        data_tests:
+          - not_null

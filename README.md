@@ -144,6 +144,17 @@ Get-Content .env | ForEach-Object { if ($_ -match '^\s*([^#=\s][^=]*)=(.*)$') { 
 dbt run --project-dir dbt --profiles-dir dbt
 dbt test --project-dir dbt --profiles-dir dbt
 ```
+## Marts layer
+
+| Model | Grain | Purpose |
+|---|---|---|
+| `marts.dim_vessels` | one row per MMSI | latest known name, type and size, first and last time seen |
+| `marts.fct_vessels_daily` | day x vessel class x ship type | distinct vessels and messages per day (question 1) |
+
+First result on 8 days (2026-10-15 to 2026-10-22): between 2,076 and 2,735 distinct Class A vessels per day and between 1,419 and 1,855 Class B. The Class B count falls over the period; eight days are too few to say whether this is seasonal. About 87% of the 7,176 vessels have a known ship type, the rest are reported as `Unknown`.
+
+Name, type and size come from the latest message that carries them, so a vessel has one ship type for the whole period. Both marts models are rebuilt from staging on every `dbt run`; they are not incremental yet. Eighteen data tests cover staging and marts, including a check that the daily table neither loses nor duplicates messages.
+
 ## Status
 
 - [x] Repository structure
@@ -153,7 +164,10 @@ dbt test --project-dir dbt --profiles-dir dbt
 - [x] Multi-day loading with a load log (raw layer)
 - [x] dbt staging model and data-quality tests
 - [x] Incremental staging model
-- [ ] dbt marts models
+- [x] dbt marts: vessel dimension and daily vessel counts (question 1)
+- [ ] dbt marts: AIS signal gaps (question 3)
+- [ ] dbt marts: port dwell time (question 2)
+- [ ] dbt marts: weekly and seasonal trends (question 4)
 - [ ] Orchestration
 - [ ] CI
 - [ ] Dashboard

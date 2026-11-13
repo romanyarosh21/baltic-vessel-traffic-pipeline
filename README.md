@@ -144,16 +144,24 @@ Get-Content .env | ForEach-Object { if ($_ -match '^\s*([^#=\s][^=]*)=(.*)$') { 
 dbt run --project-dir dbt --profiles-dir dbt
 dbt test --project-dir dbt --profiles-dir dbt
 ```
+
 ## Marts layer
 
 | Model | Grain | Purpose |
 |---|---|---|
 | `marts.dim_vessels` | one row per MMSI | latest known name, type and size, first and last time seen |
 | `marts.fct_vessels_daily` | day x vessel class x ship type | distinct vessels and messages per day (question 1) |
+| `marts.fct_signal_gaps` | one row per pause over 60 minutes (Class A) | question 3; the threshold is the dbt variable `signal_gap_minutes` |
 
 First result on 8 days (2026-10-15 to 2026-10-22): between 2,076 and 2,735 distinct Class A vessels per day and between 1,419 and 1,855 Class B. The Class B count falls over the period; eight days are too few to say whether this is seasonal. About 87% of the 7,176 vessels have a known ship type, the rest are reported as `Unknown`.
 
-Name, type and size come from the latest message that carries them, so a vessel has one ship type for the whole period. Both marts models are rebuilt from staging on every `dbt run`; they are not incremental yet. Eighteen data tests cover staging and marts, including a check that the daily table neither loses nor duplicates messages.
+Name, type and size come from the latest message that carries them, so a vessel has one ship type for the whole period. All marts models are rebuilt from staging on every `dbt run`; they are not incremental yet. Twenty-three data tests cover staging and marts, including a check that the daily table neither loses nor duplicates messages.
+
+### Signal gaps (question 3)
+
+On the 8 loaded days the model found 13,669 pauses longer than 60 minutes between two consecutive messages of the same Class A vessel. The threshold comes from profiling one day: the median pause is 10 seconds, 99% of pauses are under 3 minutes, and a 10-minute threshold gives about 6,900 pauses a day, mostly noise. By straight-line distance between the last message before and the first message after a pause: 54% under 1 km, 23% between 1 and 20 km, 19% between 20 and 100 km, 4% over 100 km.
+
+A gap means the receivers got nothing, not that a vessel switched AIS off: it may have been moored with a weak signal or have left the coverage area. The model records the evidence (positions, status before the gap, distance) and does not label intent.
 
 ## Status
 
@@ -165,8 +173,8 @@ Name, type and size come from the latest message that carries them, so a vessel 
 - [x] dbt staging model and data-quality tests
 - [x] Incremental staging model
 - [x] dbt marts: vessel dimension and daily vessel counts (question 1)
-- [ ] dbt marts: AIS signal gaps (question 3)
 - [ ] dbt marts: port dwell time (question 2)
+- [x] dbt marts: AIS signal gaps (question 3)
 - [ ] dbt marts: weekly and seasonal trends (question 4)
 - [ ] Orchestration
 - [ ] CI

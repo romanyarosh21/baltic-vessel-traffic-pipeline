@@ -30,3 +30,22 @@ models:
       - name: vessels
         data_tests:
           - not_null
+
+  - name: fct_signal_gaps
+    description: >
+      Pauses longer than signal_gap_minutes (default 60) between two consecutive
+      messages of the same Class A vessel. A gap means the receiving system got
+      nothing, not that the vessel switched AIS off: it may have left the coverage area.
+    columns:
+      - name: mmsi
+        data_tests:
+          - not_null
+      - name: gap_start_ts
+        data_tests:
+          - not_null
+      - name: gap_end_ts
+        data_tests:
+          - not_null
+      - name: gap_minutes
+        data_tests:
+          - not_null

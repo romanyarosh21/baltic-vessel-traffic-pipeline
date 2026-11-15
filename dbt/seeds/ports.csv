@@ -1,0 +1,15 @@
+port_id,port_name,country,lat,lon,radius_km,confidence
+rodbyhavn,Rodbyhavn,DK,54.653,11.352,4,high
+copenhagen,Copenhagen,DK,55.69,12.62,8,medium
+rostock,Rostock,DE,54.14,12.10,8,high
+trelleborg,Trelleborg,SE,55.372,13.155,3,high
+gothenburg,Gothenburg,SE,57.70,11.90,7,medium
+esbjerg,Esbjerg,DK,55.47,8.43,5,high
+frederikshavn,Frederikshavn,DK,57.44,10.54,4,high
+skagen,Skagen,DK,57.72,10.59,4,medium
+cuxhaven,Cuxhaven,DE,53.87,8.70,4,high
+kiel,Kiel,DE,54.33,10.15,6,high
+hirtshals,Hirtshals,DK,57.59,9.96,3,high
+nyborg,Nyborg,DK,55.31,10.79,3,medium
+thyboron,Thyboron,DK,56.70,8.21,3,high
+malmo,Malmo,SE,55.63,13.00,5,medium

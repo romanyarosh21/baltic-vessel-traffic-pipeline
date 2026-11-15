@@ -49,3 +49,28 @@ models:
       - name: gap_minutes
         data_tests:
           - not_null
+
+  - name: fct_vessel_stops
+    description: >
+      Stops of Class A vessels: uninterrupted runs of messages with the status
+      Moored or At anchor. The status is entered by the crew, so this is an
+      approximation. Stops at the edges of the loaded period are truncated.
+    columns:
+      - name: mmsi
+        data_tests:
+          - not_null
+      - name: stop_status
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["Moored", "At anchor"]
+      - name: stop_start_ts
+        data_tests:
+          - not_null
+      - name: stop_end_ts
+        data_tests:
+          - not_null
+      - name: duration_minutes
+        data_tests:
+          - not_null

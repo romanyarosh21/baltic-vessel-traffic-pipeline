@@ -1,0 +1,7 @@
+version: 2
+
+seeds:
+  - name: ports
+    description: Hand-made list of ports in the receiving area, with a centre point and a radius. Coordinates are approximate; confidence says how sure the identification is.
+    config:
+      schema: marts

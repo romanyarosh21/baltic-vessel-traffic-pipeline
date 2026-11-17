@@ -74,3 +74,44 @@ models:
       - name: duration_minutes
         data_tests:
           - not_null
+
+  - name: fct_port_stops
+    description: >
+      Each stop assigned to the nearest port or anchorage from the hand-made
+      ports seed whose radius contains the stop. Stops outside every radius
+      have a NULL port_id.
+    columns:
+      - name: mmsi
+        data_tests:
+          - not_null
+      - name: stop_start_ts
+        data_tests:
+          - not_null
+      - name: place_type
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["port", "anchorage"]
+      - name: port_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('ports')
+                field: port_id
+
+  - name: fct_port_dwell
+    description: >
+      Dwell time per port or anchorage (median, mean, 90th percentile, share of
+      stops over 24 hours). Approximate: ports are a hand-made list and stops at
+      the edges of the loaded period are truncated.
+    columns:
+      - name: port_id
+        data_tests:
+          - unique
+          - not_null
+      - name: stops
+        data_tests:
+          - not_null
+      - name: median_hours
+        data_tests:
+          - not_null

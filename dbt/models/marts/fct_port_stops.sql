@@ -1,15 +1,16 @@
 {{ config(materialized='table') }}
 
--- Each stop is assigned to the nearest port whose radius contains the stop's
--- average position. Stops outside every radius keep port_id = NULL.
+-- Each stop is assigned to the nearest port or anchorage whose radius contains
+-- the stop's average position. Stops outside every radius keep port_id = NULL.
 select
     s.*,
     p.port_id,
     p.port_name,
-    p.country
+    p.country,
+    p.place_type
 from {{ ref('fct_vessel_stops') }} as s
 left join lateral (
-    select pt.port_id, pt.port_name, pt.country
+    select pt.port_id, pt.port_name, pt.country, pt.place_type
     from {{ ref('ports') }} as pt
     where st_dwithin(
         st_setsrid(st_makepoint(s.avg_lon::float8, s.avg_lat::float8), 4326)::geography,

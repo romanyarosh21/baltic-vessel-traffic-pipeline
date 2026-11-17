@@ -2,6 +2,16 @@ version: 2
 
 seeds:
   - name: ports
-    description: Hand-made list of ports in the receiving area, with a centre point and a radius. Coordinates are approximate; confidence says how sure the identification is.
+    description: Hand-made list of ports and anchorages in the receiving area, with a centre point and a radius. Coordinates are approximate; confidence says how sure the identification is.
     config:
       schema: marts
+    columns:
+      - name: port_id
+        data_tests:
+          - unique
+          - not_null
+      - name: place_type
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["port", "anchorage"]

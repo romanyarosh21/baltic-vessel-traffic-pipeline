@@ -154,7 +154,7 @@ dbt test --project-dir dbt --profiles-dir dbt
 | `marts.fct_signal_gaps` | one row per pause over 60 minutes (Class A) | question 3; the threshold is the dbt variable `signal_gap_minutes` |
 | `marts.fct_vessel_stops` | one row per stop (Class A, status Moored or At anchor) | stops as uninterrupted runs of the same stationary status |
 | `marts.fct_port_stops` | one row per stop | each stop assigned to a port or anchorage from the `ports` seed |
-| `marts.fct_port_dwell` | one row per port or anchorage | median, mean, 90th percentile and share over 24 h of dwell time (question 2) |
+| `marts.fct_port_dwell` | one row per port or anchorage | median, mean, 90th percentile and share over 24 h of dwell time (question 2) | 
 
 First result on 8 days (2026-10-15 to 2026-10-22): between 2,076 and 2,735 distinct Class A vessels per day and between 1,419 and 1,855 Class B. The Class B count falls over the period; eight days are too few to say whether this is seasonal. About 87% of the 7,176 vessels have a known ship type, the rest are reported as `Unknown`.
 

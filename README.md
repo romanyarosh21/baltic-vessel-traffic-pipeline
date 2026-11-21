@@ -17,7 +17,7 @@ This project turns those raw files into a clean, tested, queryable dataset.
 ## Questions the pipeline will answer
 
 1. How many vessels pass through the straits per day, by vessel type?
-2. What is the average dwell time in Danish ports?
+2. What is the typical dwell time in ports in the receiving area?
 3. Which vessels have AIS signal gaps longer than a set threshold?
 4. How does traffic change by week and season?
 
@@ -152,16 +152,55 @@ dbt test --project-dir dbt --profiles-dir dbt
 | `marts.dim_vessels` | one row per MMSI | latest known name, type and size, first and last time seen |
 | `marts.fct_vessels_daily` | day x vessel class x ship type | distinct vessels and messages per day (question 1) |
 | `marts.fct_signal_gaps` | one row per pause over 60 minutes (Class A) | question 3; the threshold is the dbt variable `signal_gap_minutes` |
+| `marts.fct_vessel_stops` | one row per stop (Class A, status Moored or At anchor) | stops as uninterrupted runs of the same stationary status |
+| `marts.fct_port_stops` | one row per stop | each stop assigned to a port or anchorage from the `ports` seed |
+| `marts.fct_port_dwell` | one row per port or anchorage | median, mean, 90th percentile and share over 24 h of dwell time (question 2) | 
 
 First result on 8 days (2026-10-15 to 2026-10-22): between 2,076 and 2,735 distinct Class A vessels per day and between 1,419 and 1,855 Class B. The Class B count falls over the period; eight days are too few to say whether this is seasonal. About 87% of the 7,176 vessels have a known ship type, the rest are reported as `Unknown`.
 
-Name, type and size come from the latest message that carries them, so a vessel has one ship type for the whole period. All marts models are rebuilt from staging on every `dbt run`; they are not incremental yet. Twenty-three data tests cover staging and marts, including a check that the daily table neither loses nor duplicates messages.
+Name, type and size come from the latest message that carries them, so a vessel has one ship type for the whole period. All marts models are rebuilt from staging on every `dbt run`; they are not incremental yet. Forty-two data tests cover staging and marts, including a check that the daily table neither loses nor duplicates messages.
 
 ### Signal gaps (question 3)
 
 On the 8 loaded days the model found 13,669 pauses longer than 60 minutes between two consecutive messages of the same Class A vessel. The threshold comes from profiling one day: the median pause is 10 seconds, 99% of pauses are under 3 minutes, and a 10-minute threshold gives about 6,900 pauses a day, mostly noise. By straight-line distance between the last message before and the first message after a pause: 54% under 1 km, 23% between 1 and 20 km, 19% between 20 and 100 km, 4% over 100 km.
 
 A gap means the receivers got nothing, not that a vessel switched AIS off: it may have been moored with a weak signal or have left the coverage area. The model records the evidence (positions, status before the gap, distance) and does not label intent.
+
+### Port dwell time (question 2)
+
+A stop is an uninterrupted run of messages from one Class A vessel with the status Moored or At anchor; a run ends when the status changes or the vessel is silent for more than 12 hours (`stop_max_silence_hours`). Each stop is assigned to the nearest place in the hand-made `ports` seed whose radius contains the stop's average position. The seed has 27 ports and 2 anchorages; the coordinates and radii are approximate and each row carries a confidence level. Anchorages are kept separate, because waiting at anchor is not time in port.
+
+On the 8 loaded days there are 4,425 stops. 2,131 were assigned to a port, 332 to an anchorage and 1,962 (44%) to no place. The median is the headline number, because a few very long stops pull the mean up.
+
+| Port | Stops | Vessels | Median dwell, hours |
+|---|---|---|---|
+| Rostock | 250 | 107 | 5.0 |
+| Gothenburg | 243 | 90 | 9.9 |
+| Rodbyhavn | 223 | 44 | 11.3 |
+| Copenhagen | 217 | 46 | 0.6 |
+| Esbjerg | 145 | 75 | 21.0 |
+| Trelleborg | 100 | 16 | 1.7 |
+| Kiel | 93 | 47 | 6.1 |
+| Cuxhaven | 76 | 46 | 3.3 |
+
+Caveats: the status is entered by the crew, so a vessel that does not update it is missed; stops that began before or ended after the 8 loaded days are truncated; small samples (a few vessels making many short calls, as with ferries) say little about other traffic; the Rodbyhavn median looks long for a ferry port and has not been investigated.### Port dwell time (question 2)
+
+A stop is an uninterrupted run of messages from one Class A vessel with the status Moored or At anchor; a run ends when the status changes or the vessel is silent for more than 12 hours (`stop_max_silence_hours`). Each stop is assigned to the nearest place in the hand-made `ports` seed whose radius contains the stop's average position. The seed has 27 ports and 2 anchorages; the coordinates and radii are approximate and each row carries a confidence level. Anchorages are kept separate, because waiting at anchor is not time in port.
+
+On the 8 loaded days there are 4,425 stops. 2,131 were assigned to a port, 332 to an anchorage and 1,962 (44%) to no place. The median is the headline number, because a few very long stops pull the mean up.
+
+| Port | Stops | Vessels | Median dwell, hours |
+|---|---|---|---|
+| Rostock | 250 | 107 | 5.0 |
+| Gothenburg | 243 | 90 | 9.9 |
+| Rodbyhavn | 223 | 44 | 11.3 |
+| Copenhagen | 217 | 46 | 0.6 |
+| Esbjerg | 145 | 75 | 21.0 |
+| Trelleborg | 100 | 16 | 1.7 |
+| Kiel | 93 | 47 | 6.1 |
+| Cuxhaven | 76 | 46 | 3.3 |
+
+Caveats: the status is entered by the crew, so a vessel that does not update it is missed; stops that began before or ended after the 8 loaded days are truncated; small samples (a few vessels making many short calls, as with ferries) say little about other traffic; the Rodbyhavn median looks long for a ferry port and has not been investigated.
 
 ## Status
 
@@ -173,7 +212,7 @@ A gap means the receivers got nothing, not that a vessel switched AIS off: it ma
 - [x] dbt staging model and data-quality tests
 - [x] Incremental staging model
 - [x] dbt marts: vessel dimension and daily vessel counts (question 1)
-- [ ] dbt marts: port dwell time (question 2)
+- [x] dbt marts: port dwell time (question 2)
 - [x] dbt marts: AIS signal gaps (question 3)
 - [ ] dbt marts: weekly and seasonal trends (question 4)
 - [ ] Orchestration

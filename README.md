@@ -1,6 +1,6 @@
 # Baltic Vessel Traffic Pipeline
 
-Incremental, idempotent ELT pipeline for open Danish AIS vessel-tracking data (about 600 MB per day compressed). Built with Python, PostgreSQL/PostGIS and dbt, with data-quality tests, orchestration and CI. Fully reproducible with Docker Compose.
+Incremental, idempotent ELT pipeline for open Danish AIS vessel-tracking data (about 600 MB per day compressed). Built with Python, PostgreSQL/PostGIS and dbt, with data-quality tests. The database runs in Docker Compose. Work in progress: orchestration, CI and a dashboard are not built yet (see Status).
 
 ## Problem
 
@@ -167,23 +167,6 @@ On the 8 loaded days the model found 13,669 pauses longer than 60 minutes betwee
 A gap means the receivers got nothing, not that a vessel switched AIS off: it may have been moored with a weak signal or have left the coverage area. The model records the evidence (positions, status before the gap, distance) and does not label intent.
 
 ### Port dwell time (question 2)
-
-A stop is an uninterrupted run of messages from one Class A vessel with the status Moored or At anchor; a run ends when the status changes or the vessel is silent for more than 12 hours (`stop_max_silence_hours`). Each stop is assigned to the nearest place in the hand-made `ports` seed whose radius contains the stop's average position. The seed has 27 ports and 2 anchorages; the coordinates and radii are approximate and each row carries a confidence level. Anchorages are kept separate, because waiting at anchor is not time in port.
-
-On the 8 loaded days there are 4,425 stops. 2,131 were assigned to a port, 332 to an anchorage and 1,962 (44%) to no place. The median is the headline number, because a few very long stops pull the mean up.
-
-| Port | Stops | Vessels | Median dwell, hours |
-|---|---|---|---|
-| Rostock | 250 | 107 | 5.0 |
-| Gothenburg | 243 | 90 | 9.9 |
-| Rodbyhavn | 223 | 44 | 11.3 |
-| Copenhagen | 217 | 46 | 0.6 |
-| Esbjerg | 145 | 75 | 21.0 |
-| Trelleborg | 100 | 16 | 1.7 |
-| Kiel | 93 | 47 | 6.1 |
-| Cuxhaven | 76 | 46 | 3.3 |
-
-Caveats: the status is entered by the crew, so a vessel that does not update it is missed; stops that began before or ended after the 8 loaded days are truncated; small samples (a few vessels making many short calls, as with ferries) say little about other traffic; the Rodbyhavn median looks long for a ferry port and has not been investigated.### Port dwell time (question 2)
 
 A stop is an uninterrupted run of messages from one Class A vessel with the status Moored or At anchor; a run ends when the status changes or the vessel is silent for more than 12 hours (`stop_max_silence_hours`). Each stop is assigned to the nearest place in the hand-made `ports` seed whose radius contains the stop's average position. The seed has 27 ports and 2 anchorages; the coordinates and radii are approximate and each row carries a confidence level. Anchorages are kept separate, because waiting at anchor is not time in port.
 
